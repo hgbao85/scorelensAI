@@ -237,7 +237,7 @@ def main(video_path, model_path, csv_output_path="carom_event_log.csv", output_v
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        # After processing finishes, log final total scores to CSV
+        # Log final total scores to CSV
         end_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
         end_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  # seconds
         csv_writer.writerow([
