@@ -1,0 +1,15 @@
+# Core dependencies for Pool8 AI Backend & Frontend System
+opencv-python==4.11.0.86
+numpy
+ultralytics
+torch
+torchvision
+tqdm
+flask
+flask-cors
+werkzeug
+pillow
+
+# Cloudinary integration
+cloudinary
+python-dotenv

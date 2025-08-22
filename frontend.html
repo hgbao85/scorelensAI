@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pool8 & Carom AI Video Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 2px dashed #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 20px 0;
+        }
+
+        .file-input {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            border: none;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .file-input-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .process-button {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 25px;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .process-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .process-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
+
+        .results {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .result-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .video-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .processed-video {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .csv-container {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .csv-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .csv-table th,
+        .csv-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .csv-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .csv-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 20px;
+            border: none;
+            text-decoration: none;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(23, 162, 184, 0.3);
+            color: white;
+            text-decoration: none;
+        }
+
+        .video-link-container {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .video-player-link {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-size: 1.2em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-player-link:hover {
+            background: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            color: #333;
+            text-decoration: none;
+        }
+
+        .video-link-description {
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .file-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #bee5eb;
+        }
+
+        .analysis-selection {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .analysis-selection h4 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .radio-option:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .radio-option input[type="radio"] {
+            display: none;
+        }
+
+        .radio-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #dee2e6;
+            border-radius: 50%;
+            margin-right: 15px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .radio-option input[type="radio"]:checked + .radio-custom {
+            border-color: #667eea;
+            background: #667eea;
+        }
+
+        .radio-option input[type="radio"]:checked + .radio-custom::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .radio-content {
+            flex: 1;
+        }
+
+        .radio-content strong {
+            display: block;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .radio-content small {
+            color: #6c757d;
+            font-size: 0.85em;
+        }
+
+        .analysis-info {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .analysis-info strong {
+            color: #2c3e50;
+        }
+
+        .status {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .download-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎱 Pool8 & Carom AI Video Processor</h1>
+            <p>Upload your pool or carom game video and get AI-powered analysis with ball tracking and event detection</p>
+        </div>
+
+        <div class="content">
+            <div id="status" class="status" style="display: none;"></div>
+
+            <div class="upload-section" id="uploadSection">
+                <h3>📹 Upload Your Game Video</h3>
+                <p>Drag and drop your video file here or click to browse</p>
+                <p><small>Maximum file size: 2GB | Supported formats: MP4, MOV, AVI</small></p>
+                
+                <div class="file-input-wrapper">
+                    <input type="file" id="videoFile" class="file-input" accept="video/*">
+                    <button class="file-input-button">Choose Video File</button>
+                </div>
+                
+                <div id="fileInfo" class="file-info" style="display: none;"></div>
+
+                <div class="analysis-selection" id="analysisSelection" style="display: none;">
+                    <h4>🎯 Select Analysis Type:</h4>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="analysisType" value="pool8" checked>
+                            <span class="radio-custom"></span>
+                            <div class="radio-content">
+                                <strong>🎱 Pool8 Analysis</strong>
+                                <small>Advanced analysis with YOLO + CNN models for pool games</small>
+                            </div>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="analysisType" value="carom">
+                            <span class="radio-custom"></span>
+                            <div class="radio-content">
+                                <strong>🎯 Carom Analysis</strong>
+                                <small>YOLO-based analysis optimized for carom billiards</small>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <button id="processButton" class="process-button">🚀 Process Video</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <h3>Processing your video...</h3>
+                <p>This may take a few minutes depending on video length</p>
+            </div>
+
+            <div id="error" class="error" style="display: none;"></div>
+
+            <div class="results" id="results">
+                <div class="result-section">
+                    <h3>ℹ️ Analysis Information</h3>
+                    <div id="analysisInfo" class="analysis-info">
+                        <!-- Analysis type info will be populated here -->
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <h3>🎬 Processed Video</h3>
+                    <div class="video-container">
+                        <div id="videoLinkContainer" class="video-link-container">
+                            <a id="videoPlayerLink" href="#" target="_blank" class="video-player-link">
+                                🎥 Click here to watch the processed video
+                            </a>
+                            <p class="video-link-description">
+                                Opens in a new tab with Cloudinary video player
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <h3>📊 Game Events & Analysis</h3>
+                    <div class="csv-container">
+                        <table class="csv-table" id="csvTable">
+                            <thead>
+                                <tr>
+                                    <th>Event Type</th>
+                                    <th>Turn</th>
+                                    <th>Frame</th>
+                                    <th>Timestamp</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="csvTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="download-buttons">
+                    <a id="downloadVideo" class="download-btn" download="processed_video.mp4">
+                        📥 Download Processed Video
+                    </a>
+                    <a id="downloadCSV" class="download-btn" download="game_events.csv">
+                        📋 Download Events CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadSection = document.getElementById('uploadSection');
+        const videoFile = document.getElementById('videoFile');
+        const fileInfo = document.getElementById('fileInfo');
+        const analysisSelection = document.getElementById('analysisSelection');
+        const processButton = document.getElementById('processButton');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const status = document.getElementById('status');
+        const results = document.getElementById('results');
+        const videoPlayerLink = document.getElementById('videoPlayerLink');
+        const csvTableBody = document.getElementById('csvTableBody');
+        const downloadVideo = document.getElementById('downloadVideo');
+        const downloadCSV = document.getElementById('downloadCSV');
+
+        // Backend server URL
+        const BACKEND_URL = 'http://localhost:5000';
+
+        // Check backend health on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                if (!response.ok) {
+                    throw new Error('Backend not responding');
+                }
+                const health = await response.json();
+                if (health.models_loaded) {
+                    showStatus('✅ Backend server is ready and models are loaded!');
+                } else {
+                    showError('Backend is running but models are not loaded. Please check server logs.');
+                }
+            } catch (err) {
+                showError('Cannot connect to backend server. Please make sure the server is running on http://localhost:5000');
+            }
+        });
+
+        // Drag and drop functionality
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        // File input change
+        videoFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file.type.startsWith('video/')) {
+                showError('Please select a valid video file.');
+                return;
+            }
+
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            fileInfo.innerHTML = `
+                <strong>Selected:</strong> ${file.name}<br>
+                <strong>Size:</strong> ${fileSize} MB<br>
+                <strong>Type:</strong> ${file.type}
+            `;
+            fileInfo.style.display = 'block';
+            analysisSelection.style.display = 'block';
+            processButton.style.display = 'inline-block';
+            hideError();
+            hideStatus();
+        }
+
+        // Process button click
+        processButton.addEventListener('click', async () => {
+            const file = videoFile.files[0];
+            if (!file) {
+                showError('Please select a video file first.');
+                return;
+            }
+
+            await processVideo(file);
+        });
+
+        async function processVideo(file) {
+            try {
+                // Show loading
+                loading.style.display = 'block';
+                results.style.display = 'none';
+                hideError();
+                hideStatus();
+                processButton.disabled = true;
+
+                // Get selected analysis type
+                const analysisType = document.querySelector('input[name="analysisType"]:checked').value;
+
+                // Create form data
+                const formData = new FormData();
+                formData.append('video', file);
+                formData.append('analysis_type', analysisType);
+
+                // Send to backend
+                const response = await fetch(`${BACKEND_URL}/process_video`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    if (response.status === 413) {
+                        throw new Error('File too large. Please use a video file smaller than 2GB.');
+                    }
+                    try {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Processing failed');
+                    } catch (jsonError) {
+                        throw new Error(`Server error (${response.status}): ${response.statusText}`);
+                    }
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayResults(result);
+                    showStatus('✅ Video processed successfully!');
+                } else {
+                    throw new Error('Processing failed');
+                }
+
+            } catch (err) {
+                console.error('Error:', err);
+                showError(`Error processing video: ${err.message}`);
+            } finally {
+                loading.style.display = 'none';
+                processButton.disabled = false;
+            }
+        }
+
+        function displayResults(result) {
+            // Display analysis information
+            const analysisInfo = document.getElementById('analysisInfo');
+            const analysisTypeDisplay = result.analysis_type === 'pool8' ? '🎱 Pool8 Analysis' : '🎯 Carom Analysis';
+            const analysisDescription = result.analysis_type === 'pool8'
+                ? 'Advanced pool game analysis using YOLO object detection + CNN classification models'
+                : 'Carom billiards analysis using YOLO object detection model';
+
+            analysisInfo.innerHTML = `
+                <p><strong>Analysis Type:</strong> ${analysisTypeDisplay}</p>
+                <p><strong>Description:</strong> ${analysisDescription}</p>
+                <p><strong>Filename:</strong> ${result.filename}</p>
+            `;
+
+            // Display processed video link
+            videoPlayerLink.href = result.player_url;
+            videoPlayerLink.textContent = `🎥 Watch Processed Video (${result.filename})`;
+
+            // Set up download links (use cloudinary direct URL for download)
+            downloadVideo.href = result.cloudinary_url;
+
+            // Display CSV data
+            displayCSVData(result.events_csv);
+
+            // Set up CSV download
+            const csvBlob = new Blob([result.events_csv], { type: 'text/csv' });
+            const csvUrl = URL.createObjectURL(csvBlob);
+            downloadCSV.href = csvUrl;
+
+            // Show results
+            results.style.display = 'block';
+        }
+
+        function displayCSVData(csvContent) {
+            const lines = csvContent.trim().split('\n');
+            
+            csvTableBody.innerHTML = '';
+            
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i].split(',');
+                const tr = document.createElement('tr');
+                
+                row.forEach(cell => {
+                    const td = document.createElement('td');
+                    td.textContent = cell.replace(/"/g, '');
+                    tr.appendChild(td);
+                });
+                
+                csvTableBody.appendChild(tr);
+            }
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function hideError() {
+            error.style.display = 'none';
+        }
+
+        function showStatus(message) {
+            status.textContent = message;
+            status.style.display = 'block';
+        }
+
+        function hideStatus() {
+            status.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
