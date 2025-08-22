@@ -237,20 +237,6 @@ def main(video_path, model_path, csv_output_path="carom_event_log.csv", output_v
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-        # After processing finishes, log final total scores to CSV
-        end_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-        end_timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000  # seconds
-        csv_writer.writerow([
-            'FinalScore',
-            turn_count,
-            end_frame,
-            f"{end_timestamp:.2f}",
-            f"Player A: {points[PLAYER_A]}, Player B: {points[PLAYER_B]}"
-        ])
-
-    # Print final scores to console
-    print(f"Final Scores -> Player A: {points[PLAYER_A]}, Player B: {points[PLAYER_B]}")
-
     cap.release()
     out.release()  # Important: close the video writer!
     cv2.destroyAllWindows()
